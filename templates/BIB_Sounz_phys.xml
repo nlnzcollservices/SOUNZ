@@ -1,0 +1,25 @@
+<record>
+<leader>00606ncm a22001933i 4500</leader>
+<controlfield tag="008">160105s####    nz uul#        n    und  </controlfield>
+<datafield tag="040" ind1=" " ind2=" ">
+    <subfield code="a">Nz</subfield>
+    <subfield code="b">eng</subfield>
+    <subfield code="c">Nz</subfield>
+</datafield>
+<datafield tag="245" ind1="0" ind2="0">
+    <subfield code="a">@title@ :</subfield>
+    <subfield code="b">@subtitle@ /</subfield>
+    <subfield code="c">.</subfield>
+</datafield>
+<datafield tag="250" ind1=" " ind2=" ">
+    <subfield code="a">Revyear.</subfield>
+</datafield>
+<datafield tag="264" ind1=" " ind2="1">
+     <subfield code="a">[Wellington] :</subfield>
+     <subfield code="b">SOUNZ, Centre for New  Zealand Music = Toi te Arapūoru</subfield>
+     <subfield code="c">&lt;date&gt;.</subfield>
+</datafield>
+<datafield tag="300" ind1=" " ind2=" ">
+     <subfield code="a">score</subfield>
+</datafield>
+</record>
