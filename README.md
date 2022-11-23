@@ -11,7 +11,7 @@ The following folder structure should be in the project folder
 
 |-log
 
-    |reports
+    |- reports
     
 |-tests
 
