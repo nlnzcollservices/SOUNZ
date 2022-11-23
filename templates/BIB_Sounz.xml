@@ -20,10 +20,13 @@
      <subfield code="a">[Wellington] :</subfield>
      <subfield code="b">SOUNZ, Centre for New  Zealand Music = Toi te Arapūoru</subfield>
      <subfield code="c">&lt;date&gt;.</subfield>
+</datafield>
 <datafield tag="300" ind1=" " ind2=" ">
      <subfield code="a">1 online resource</subfield>
 </datafield>
-<datafield tag="588" ind1=" " ind2=" "><subfield code="a">Record automatically derived from PDF content.</subfield><subfield code="5">Nz</subfield>
+<datafield tag="588" ind1=" " ind2=" ">
+    <subfield code="a">Record automatically derived from PDF content.</subfield>
+    <subfield code="5">Nz</subfield>
 </datafield>
 <datafield tag="590" ind1=" " ind2=" ">
 <subfield code="a">Music score short record.</subfield>
