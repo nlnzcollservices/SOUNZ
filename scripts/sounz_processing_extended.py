@@ -241,7 +241,7 @@ def parsing_bib_xml(metadata):
     # Field 245
 
     record['245']['c'] = metadata['author'] + '.'
-    record['245']['a']= metadata['title'].rstrip(" ") + ' :'
+    record['245']['a']= metadata['title'].capitalize().rstrip(" ") + ' :'
     record['245']['b'] = metadata['subtitle'].rstrip(" ") + ' /'
       
     title_words = metadata["title"].split( ' ' )
@@ -255,9 +255,6 @@ def parsing_bib_xml(metadata):
                     record["245"].indicators = ['1', '3']
    
     
-    #Field 250
-
-    record["250"]['a'] = metadata["year"]
     
     #Field 264
     
@@ -303,11 +300,7 @@ def parsing_bib_xml_phys(metadata):
                     record["245"].indicators = ['1', '2']
                 if title_words[0] == "An":
                     record["245"].indicators = ['1', '3']
-   
-    
-    #Field 250
 
-    record["250"]['a'] = metadata["year"]
     
     #Field 264
     
@@ -392,6 +385,38 @@ def bib_updating(value, mms):
     return( mms, flag )
 
 
+def update_po_line( po_line, values ):
+
+    """Updates PO_line
+
+    Parameters:
+        value(str) - bib record in xml format
+        po_line(str) - po_line
+    Returns:
+        flag(bool) - True if po_line was not created
+        pol (str) - Alma po_line number
+    """
+
+    flag = False
+    url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines/{}?apikey={}'.format(po_line, api_key)
+    print(url)
+    headers = {'content-Type':'application/xml'}
+    r = requests.put( url, headers=headers, data = values )
+    print(r.text)
+    grab = BeautifulSoup( r.text, 'lxml-xml' )
+    try:
+        POL = grab.find( 'po_line' ).find( 'number' ).string#looking for po-line number  
+        statement = 'posted: '+POL
+        print ( statement )
+       
+    except AttributeError as e:
+        statement = "Error during creating POL {}\t{}\t{}\n".format( values, type( e ),str( e ) )
+        print(statement)
+        POL = None
+        flag = True
+    return (POL, flag)  
+
+
 def create_po_line( values ):
 
     """Makes PO_line
@@ -420,8 +445,22 @@ def create_po_line( values ):
         flag = True
     return (POL, flag)  
 
+def get_po_line(pol):
 
-def get_PID( pol ):
+    """ Gets po_line xml via Alma API
+    Parameters:
+        pol(str) - po_line
+
+
+    """
+
+    flag = False
+    url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines/{}?apikey={}'.format(pol, api_key)
+    r = requests.get( url )
+    print( '{}\t{}\n'.format( r, r.text ) )
+
+
+def get_pid( pol ):
 
     """ Gets item pid via Alma API
     Parameters:
@@ -449,6 +488,179 @@ def get_PID( pol ):
         pid = None
         flag = True
     return (pid, flag)
+def update_holding(mms, holding_id, values):
+
+    """ Update holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_id(str) - item pid    
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}?apikey={}'.format(mms, holding_id, api_key)
+    headers = {'content-Type':'application/xml'}
+    r = requests.put( url, headers=headers, data = values )
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (holding_id, flag)
+
+
+def update_item_data( mms, holding_id, item_id ):
+
+    """ Get holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_data(str) - text from request
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}?apikey={}'.format(mms, holding_id, api_key)
+    r = requests.get( url )
+
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (r.text, flag)
+
+def update_holding(mms, holding_id, values):
+
+    """ Update holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_id(str) - item pid    
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}?apikey={}'.format(mms, holding_id, api_key)
+    headers = {'content-Type':'application/xml'}
+    r = requests.put( url, headers=headers, data = values )
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (holding_id, flag)
+
+
+def get_holding_data( mms, holding_id ):
+
+    """ Get holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_data(str) - text from request
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}?apikey={}'.format(mms, holding_id, api_key)
+    r = requests.get( url )
+
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (r.text, flag)
+
+def get_holdings( mms, number ):
+
+    """ Get holding id via Alma API
+    Parameters:
+        mms(str) - mms_id
+
+    Returns:
+        holding_id(str) - item pid    
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings?apikey={}'.format(mms, api_key)
+    r = requests.get( url )
+    # print( '{}\t{}\n'.format( r, r.text ) )
+    try:
+        holding_id = re.findall(r'<holding_id>(.*?)</holding_id>',r.text)[number]
+
+    except AttributeError as e:
+        statement =  "Error during getting pid {}\t{}\t{}\n".format( POL, type( e ),str( e ) ) 
+        print( statement )
+        holding_id = None
+        flag = True
+
+    return (holding_id, flag)
+def update_item (mms, holding_id, pid, values):
+
+    """ Update holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_id(str) - item pid    
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}/items/{}?apikey={}'.format(mms, holding_id, pid, api_key)
+    headers = {'content-Type':'application/xml'}
+    r = requests.put( url, headers=headers, data = values.encode("UTF-8") )
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (holding_id, flag)
+
+
+def get_item_data( mms, holding_id, pid ):
+
+    """ Get holding record via Alma API
+    Parameters:
+        mms(str) - mms_id
+        holding_id(str) - holding_id
+
+
+    Returns:
+        holding_data(str) - text from request
+        flag(bool) - True if error
+
+    """
+
+    flag = False
+    url = 'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs/{}/holdings/{}/items/{}?apikey={}'.format(mms, holding_id, pid, api_key)
+    r = requests.get( url )
+
+
+    if not str(r.status_code).startswith("2"):
+        flag = True
+
+    return (r.text, flag)
+
 
 
 def receive_item( pol, pid ):
@@ -519,7 +731,7 @@ def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid
 
     if not flag_bib and not flag_po and flag_pid:
         print( "5. Getting pid" )
-        pid, flag_pid =get_PID( pol_no )
+        pid, flag_pid =get_pid( pol_no )
         flag_pid = False
         print( pid )
 
@@ -536,74 +748,151 @@ def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid
 def sounz_routine():
 
     """Manages all the process of making digital and pysical record an aquisition part and writes the sounz.txt reports"""
-    files = os.listdir( file_folder )
-    for fl in files:
-        print("#"*50)
-        print(os.path.join(fl))    
-        if ".pdf" in fl:# and fl == "29307_dl copy.pdf":
-            print("1. Parse pdf")
-            my_dict = parse_pdf(os.path.join(file_folder, fl))
-            if my_dict:
-                print("here")
-                print("2. Parse template for digital")
-                bib_data = parsing_bib_xml(my_dict)
-                mms, flag_bib = bib_creating( bib_data )
-                print(mms)
-                with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
-                    po_data = polfl.read()
-                po_data = re.sub(r"\[MMS\]", mms, po_data)
-                pol_no, flag_po = create_po_line( po_data )
-                print( "5. Getting pid" )
-                pid, flag_pid =get_PID( pol_no )
-                print( "6. Receiving item" )
-                resp,flag_receive = receive_item( pol_no, pid )
-                if flag_bib or flag_po or flag_pid or flag_receive:
-                    mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
-                print(working_folder)
-                print( "7. Writing ")
-                with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                    f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ my_dict["title"]+"|"+my_dict["message"]+"\n")
-                print("2. Parse template for physical")
-                bib_data = parsing_bib_xml_phys(my_dict)
-                mms, flag_bib = bib_creating( bib_data )
-                print(mms)
-                with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
-                    po_data = polfl.read()
-                po_data = re.sub(r"\[MMS\]", mms, po_data)
-                pol_no, flag_po = create_po_line( po_data )
-                print( "5. Getting pid for physical" )
-                pid, flag_pid =get_PID( pol_no )
-                print( "6. Receiving item for physical" )
-                resp,flag_receive = receive_item( pol_no, pid )
-                if flag_bib or flag_po or flag_pid or flag_receive:
-                    mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
-                print(working_folder)
-                print( "7. Writing ")
-                with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                    f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
-            # else:
-                with open(text_file_path,"a") as f:
-                    f.write(fl+"||||could not make a record"+"\n")
-            print("8. Reading text file")
+    # files = os.listdir( file_folder )
+    # for fl in files:
+    #     print("#"*50)
+    #     print(os.path.join(fl))    
+    #     if ".pdf" in fl:# and fl == "29307_dl copy.pdf":
+    #         print("1. Parse pdf")
+    #         my_dict = parse_pdf(os.path.join(file_folder, fl))
+    #         if my_dict:
+    #             print("here")
+    #             print("2.1 Parse template for digital")
+    #             bib_data = parsing_bib_xml(my_dict)
+    #             mms, flag_bib = bib_creating( bib_data )
+    #             print(mms)
+    #             with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
+    #                 po_data = polfl.read()
+    #             po_data = re.sub(r"\[MMS\]", mms, po_data)
+    #             pol_no, flag_po = create_po_line( po_data )
+    #             print( "5.1 Getting pid" )
+    #             pid, flag_pid =get_pid( pol_no )
+    #             print( "6.1 Receiving item" )
+    #             resp,flag_receive = receive_item( pol_no, pid )
+    #             if flag_bib or flag_po or flag_pid or flag_receive:
+    #                 mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
+    #             print(working_folder)
+    #             print( "7.1 Writing ")
+    #             with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+    #                 f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+    #             print("2.2 Parse template for physical")
+    #             bib_data = parsing_bib_xml_phys(my_dict)
+    #             mms, flag_bib = bib_creating( bib_data )
+    #             print(mms)
+    #             with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
+    #                 po_data = polfl.read()
+    #             po_data = re.sub(r"\[MMS\]", mms, po_data)
+    #             pol_no_nl, flag_po = create_po_line( po_data )
+    #             print( "5.2.1 Getting pid for physical Nat Lib" )
+    #             pid_nl, flag_pid =get_pid( pol_no_nl )
+    #             print( "6.2.1 Receiving item for physical Nat Lib" )
+    #             resp,flag_receive = receive_item( pol_no_nl, pid_nl )
+    #             if flag_bib or flag_po or flag_pid or flag_receive:
+    #                 mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
+    #             print(working_folder)
+    #             with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
+    #                 po_data = polfl.read()
+    #             po_data = re.sub(r"\[MMS\]", mms, po_data)
+    #             pol_no_atl, flag_po = create_po_line( po_data )
+    #             print( "5.2.2 Getting pid for physical ATL" )
+    #             pid_atl, flag_pid =get_pid( pol_no_atl)
+    #             print( "6.2.2 Receiving item for physical ATL" )
+    #             resp,flag_receive = receive_item( pol_no_atl, pid_atl )
+    #             if flag_bib or flag_po or flag_pid or flag_receive:
+    #                 mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
+    #             print(working_folder)   
+    #             print( "7. Writing ")
+    #             with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+    #                 f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+    #         # else:
+    #             with open(text_file_path,"a") as f:
+    #                 f.write(fl+"||||could not make a record"+"\n")
+    #         print("8. Reading text file")
     with open (text_file_path,"r") as f:
         data = f.read()
 
-    for line in data.split("\n")[:-1]:
+    for line in data.split("\n")[1:-1]:
         line_list = line.split("|")
         if len(line_list)>1:
             filename = line_list[0]
             mms_id = line_list[1]
+            # po_line = line_list[2]
+            # pid = line_list[3]
+            # pol_no_nl = line_list[2]
+            # pid_nl = line_list[3]
             fl = line_list[0]
             fl_path = os.path.join(file_folder,fl)
             my_dict = parse_pdf(fl_path)
+##################################################GET Holdings######################
+            #holding_id, flag = get_holdings(mms_id, 0)
+#             print(flag)
+#             if not flag:
+#                 print(holding_id)
+# #################################################Update Holding#########################
+#                 holding_data, flag = get_holding_data(mms_id, holding_id)
+#                 print(holding_data)
+#                 holding_data = holding_data.replace('<subfield code="b">ATL</subfield><subfield code="c">ATL.DA</subfield>','<subfield code="b">NL</subfield><subfield code="c">WN.MUSSCO</subfield>')
+#                 print(flag)
+#                 if not flag:
+#                     holding_id,flag = update_holding(mms_id, holding_id, holding_data)
+#                     print(flag)
+#                     if not flag:
+#                         print(holding_id, " - updated")
+#                     else:
+#                         print(holding_id, " - failed to update")
+#             print(flag)
+
+#################################GET ITEM DATA#######################################
+            # item_data,flag = get_item_data(mms_id, holding_id, pid)
+            # if not flag:
+            #     item_data = item_data.replace('<item_policy desc="Heritage">HERITAGE</item_policy>','<policy desc="National Library">STANDARD</policy>')
+#################################UPDATE ITEM#########################################3
+            # pid, flag_update = update_item(mms_id, holding_id, pid , item_data)
+            # if not flag_update:
+            #     print(pid, " - updated")
+            # else:
+            #     print(pid, " - failed to update")
+
+
+
+
 #######################################################For updating digital bibs from text file report###############################
-            # bib_data = parsing_bib_xml(my_dict)
+            #!!!Check that text file is from physical or digital set and parsing_bib function also should be physical if report physical and opposite.
+            # bib_data = parsing_bib_xml_phys(my_dict)
+            # #bib_data = parsing_bib_xml(my_dict)
             # mms, flag_bib = bib_updating( bib_data , mms_id)
             # if not flag_bib:
             #     print(mms, " - updated")
             # else:
             #     print(mms, " - failed to update")
-#####################################################################################################################################
+###########################################################For updateing po_lines from text report###################################
+            # with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
+            #     po_data = polfl.read()
+            # po_data = re.sub(r"\[MMS\]", mms_id, po_data)
+            # get_po_line(po_line)
+            # pol_no, flag_po = update_po_line( po_line, po_data )
+            # if not flag_po:
+            #      print(pol_no, " - updated")
+            # else:
+            #      print(pol_no, " - failed to update")     
+#################################################MAKE ITL PO and ITEMS##################################################
+
+            # with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
+            #     po_data = polfl.read()
+            # mms = str(mms_id)
+            # po_data = re.sub(r"\[MMS\]", mms, po_data)
+            # pol_no_atl, flag_po = create_po_line( po_data )
+            # print( "5.2.2 Getting pid for physical ATL" )
+            # pid_atl, flag_pid =get_pid( pol_no_atl)
+            # print( "6.2.2 Receiving item for physical ATL" )
+            # resp,flag_receive = receive_item( pol_no_atl, pid_atl )
+            # print(working_folder)   
+            # print( "7. Writing ")
+            # with open(os.path.join(working_folder,"log","reports","sounz_phys_atl_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+            #     f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+
+
+
             print("9. Making sip")
             my_sip =  SIPMaker(title = my_dict["title"], subtitle = my_dict["subtitle"], mms = mms_id, year = my_dict["year"] ,filepath = os.path.join(file_folder,fl))
             if my_sip.flag:
@@ -620,7 +909,9 @@ def sounz_routine():
 
 
 ##########################################SETTINGS##############################################################    
+#use this for updates text_file_path = os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())) 
 text_file_path = os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore()))    
+
 print(text_file_path)
 
 
