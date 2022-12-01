@@ -1,0 +1,17 @@
+change # to |
+
+delete second 007
+delete 100
+245 first ind to 0
+264
+do not  need second 264
+500 add subfield 5
+delete  546
+delete 655
+delete first 856
+
+ask Kirsty about 2 347 and 500
+
+troubleshoot 9919266429802836
+
+Anthem exclamation mark investigate with ff on the end of author name

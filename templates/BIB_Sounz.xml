@@ -2,7 +2,7 @@
 <leader>00606ncm a22001933i 4500</leader>
 <controlfield tag="006">m|||||o||d||||||||</controlfield>
 <controlfield tag="007">cr#|||||||||||</controlfield>
-<controlfield tag="008">160105s####    nz uul# o      n    und  </controlfield>
+<controlfield tag="008">160105s####    nz uul# o      n         </controlfield>
 <datafield tag="040" ind1=" " ind2=" ">
     <subfield code="a">Nz</subfield>
     <subfield code="b">eng</subfield>
@@ -13,12 +13,9 @@
     <subfield code="b">@subtitle@ /</subfield>
     <subfield code="c">.</subfield>
 </datafield>
-<datafield tag="250" ind1=" " ind2=" ">
-    <subfield code="a">Revyear.</subfield>
-</datafield>
 <datafield tag="264" ind1=" " ind2="1">
      <subfield code="a">[Wellington] :</subfield>
-     <subfield code="b">SOUNZ, Centre for New  Zealand Music = Toi te Arapūoru</subfield>
+     <subfield code="b">SOUNZ, Centre for New Zealand Music = Toi te Arapūoru,</subfield>
      <subfield code="c">&lt;date&gt;.</subfield>
 </datafield>
 <datafield tag="300" ind1=" " ind2=" ">
@@ -30,10 +27,5 @@
 </datafield>
 <datafield tag="590" ind1=" " ind2=" ">
 <subfield code="a">Music score short record.</subfield>
-</datafield>
-<datafield tag="856" ind1="4" ind2="0">
-     <subfield code="u">&lt;Add Primo Permalink&gt;</subfield>
-     <subfield code="z">Archived copy available within National Library of New Zealand only</subfield>
-     <subfield code="x"> Limited On Site Access</subfield>
 </datafield>
 </record>

@@ -20,7 +20,7 @@ def cleaned(title):
 	"""
 
 
-	title = title.replace("Õ","'").replace("ß","fl").replace("©",'')#.replace("!","")
+	title = title.replace("Õ","'").replace("ß","fl").replace("©",'').rstrip(" ").lstrip(" ")#.replace("!","")
 	return title
 
 def parse_pdf ( file_path):
@@ -77,16 +77,18 @@ def parse_pdf ( file_path):
 	if not copyright_holder:
 		message += " Check author"
 		copyright_holder = ""
+	if "!" in title or "!" in subtitle:
+		message = "Check if title of subtitle contains ! or missed 'ff'"
 	print(message)
 	try:
 		copyright_year = cleaned(copyright_year)
 	except:
 		copyright_year = str(current_year)
 
-	try:
-		return ({"title":cleaned(title), "subtitle":cleaned(subtitle), "year":copyright_year,"author":cleaned(copyright_holder),"message":message})
-	except:
-		None
+	
+	return ({"title":cleaned(title), "subtitle":cleaned(subtitle), "year":copyright_year,"author":cleaned(copyright_holder),"message":message})
+	
+	
 
 def get_mms_by_sru(title):
 	""" This heler function checking titles if there is archived something already"""

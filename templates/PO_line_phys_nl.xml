@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <po_line>
+     <owner desc="Central Acquisition Department">COL</owner>
+     <type desc="Print_Book - One Time">PRINTED_BOOK_OT</type>
+     <vendor desc="Sounz, Centre For NZ Music">SOUNZ</vendor>
+     <vendor_account>SOUNZ-P</vendor_account>
+     <acquisition_method desc="Purchase at Vendor System">VENDOR_SYSTEM</acquisition_method> 
+     <price>
+        <sum>0.00</sum>
+        <currency desc="New Zealand Dollar">NZD</currency>
+     </price>
+     <source_type desc="Manual Entry">MANUALENTRY</source_type>
+     <reporting_code>-</reporting_code>
+     <resource_metadata><mms_id>[MMS]</mms_id></resource_metadata>
+     <locations>
+         <location>
+             <quantity>1</quantity>
+                   <library desc="National Library of New Zealand">NL</library>
+                   <shelving_location>WN.MUSSCO</shelving_location>
+                   <copies>
+                        <copy >
+                            <policy desc="National Library">STANDARD</policy>
+                        </copy>
+                   </copies>
+           </location>
+       </locations>
+       <material_type desc="Music Score">SCORE</material_type>
+  </po_line>

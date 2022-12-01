@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <po_line>
+     <owner desc="Central Acquisition Department">COL</owner>
+     <type desc="Print_Book - One Time">PRINTED_BOOK_OT</type>
+     <vendor desc="Sounz, Centre For NZ Music">SOUNZ</vendor>
+     <vendor_account>SOUNZ-LD</vendor_account>
+    <acquisition_method desc="Legal Deposit - Without Letter">LEGAL_DEPOSIT_NOLETTER</acquisition_method>     
+    <price>
+        <sum>0.00</sum>
+        <currency desc="New Zealand Dollar">NZD</currency>
+     </price>
+     <reporting_code>-</reporting_code>
+     <resource_metadata><mms_id>[MMS]</mms_id></resource_metadata>
+     <locations>
+         <location>
+             <quantity>1</quantity>
+                   <library desc="Alexander Turnbull Library">ATL</library>
+                   <shelving_location>ATL.MUS</shelving_location>
+                   <copies>
+                        <copy >
+                            <item_policy desc="Heritage">HERITAGE</item_policy>
+                        </copy>
+                   </copies>
+           </location>
+       </locations>
+       <material_type desc="Music Score">SCORE</material_type>
+  </po_line>
