@@ -135,7 +135,7 @@ class SIPMaker():
                 build_single_file_sip (
                                     ie_dmd_dict=[{"dc:date":self.year,  "dc:title":self.title}],
                                     filepath=self.filepath,
-                                    generalIECharacteristics=[{"IEEntityType":"OneOff","UserDefinedA":"SOUNZ"}],
+                                    generalIECharacteristics=[{"IEEntityType":"OneOffIE","UserDefinedA":"SOUNZ"}],
                                     objectIdentifier= [{"objectIdentifierType":"ALMAMMS", "objectIdentifierValue":self.mms}],
                                     accessRightsPolicy=[{"policyId":"200"}],
                                     digital_original=True,
