@@ -4,7 +4,7 @@
      <type desc="Print_Book - One Time">PRINTED_BOOK_OT</type>
      <vendor desc="Sounz, Centre For NZ Music">SOUNZ</vendor>
      <vendor_account>SOUNZ-LD</vendor_account>
-     <acquisition_method desc="Legal Deposit">LEGAL_DEPOSIT</acquisition_method>
+   <acquisition_method desc="Legal Deposit - Without Letter">LEGAL_DEPOSIT_NOLETTER</acquisition_method>  
      <price>
         <sum>0.00</sum>
         <currency desc="New Zealand Dollar">NZD</currency>

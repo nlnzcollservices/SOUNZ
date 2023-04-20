@@ -25,16 +25,24 @@ from rosetta_sip_factory.sip_builder import build_single_file_sip
 
 
 
-api_key = "l8xx24faa60a17b14ef2947fb2e8222f8f24"#Production
-#api_key = "l8xx5d24fa2ed92248dfb913722b8e3fb2d6"#Sandbox
+#api_key = ""#Production
+api_key = ""#Sandbox
 
-file_folder = r"Y:/ndha/CS_legaldeposit/LD/one-time/sounz/2022 11"
+file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 04_retain for testing"
+number_of_files_skipped = 0
 working_folder = p = Path(__file__).parents[1]
 template_folder = os.path.join(working_folder,"templates")
 sip_folder = os.path.join(working_folder,"SIP")
 report_folder = os.path.join(working_folder,"log","reports")
 rosetta_folder = r"Y:\ndha\pre-deposit_prod\server_side_deposits\prod\ld_scheduled\oneoff"
 
+try:
+    with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"r", encoding="utf-8") as f:
+        data = f.read()
+    my_titles = data.split("\n")[:-1]
+except:
+
+    my_titles = []
 ####################################################################################################################
 NON_FILING_WORDS = ( 'the', 'an', 'a' )
 #####################################################Current Time Class#####################################
@@ -126,7 +134,9 @@ class SIPMaker():
                 subt_part = "_".join(subtitle_list[1:3])
             else:
                 subt_part = subtitle_list[0]
-            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_")+"_"+subt_part + "_"+self.year)
+            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace("'","").replace("?","").replace("/","_")+"_"+subt_part + "_"+self.year)
+            if self.output_folder.startswith("for_"):
+                self.output_folder = os.path.join(sip_folder, subt_part + "_"+self.year)
             print(self.filepath )
             print(self.output_folder)
             self.pref = "SOUNZ_"
@@ -152,7 +162,11 @@ class SIPMaker():
 
 
             except Exception as e:
-                print(str(e))
+                report_name = "report_sips"+str(dt.now().strftime("_%d%m%Y"))+".txt"
+                with open(os.path.join(report_folder, report_name),"a") as f:
+                    f.write("{}|{}|{}|Faild: {}".format(self.title,self.mms, self.year,str(e)))
+                    f.write("\n")
+                
 
 
 
@@ -168,19 +182,19 @@ def sip_checker(sippath):
     flag = False
 
     if os.path.getsize(os.path.join(sippath, "content", "mets.xml")) == 0:
-        logger.info("Attention - empty met! {} ".format(sippath))
+        print("Attention - empty met! {} ".format(sippath))
         flag = True
     if os.path.getsize(os.path.join(sippath, "content", "dc.xml")) == 0:
-        logger.info("Attention - empty  dc met! {}".format(sippath))
+        print("Attention - empty  dc met! {}".format(sippath))
         flag = True
     if len(os.listdir(os.path.join(sippath,  "content", "streams"))) == 0:
-        logger.info("Attention - no file! {}".format(sippath))
+        print("Attention - no file! {}".format(sippath))
         flag = True
     if len(os.listdir(os.path.join(sippath,  "content", "streams"))) >1:
-        logger.info("Attention - more then 1 file in the! {}".format(sippath))
+        print("Attention - more then 1 file in the! {}".format(sippath))
         flag = True
     if len(os.listdir(os.path.join(sippath,  "content"))) == 0:
-        logger.info("Attention - streem folder! {}".format(sippath))
+        print("Attention - streem folder! {}".format(sippath))
         flag = True
     else:
         myfilepath = os.path.join(sippath, "content", "streams", os.listdir(os.path.join(sippath,  "content", "streams"))[0])
@@ -188,15 +202,7 @@ def sip_checker(sippath):
                 logger.info("Attention - 0 byte file! {}".format(myfilepath))
                 flag = True             
     return flag
-class Writings(object):
     
-    def write_errors( Writings_statement ):
-        with open ("errors.txt", "a") as error_file:
-            error_file.write(Writings_statement)
-       
-    def write_logs( Writings_statement ):
-        with open ( "logfile.txt", "a" ) as log_file:
-            log_file.write(Writings_statement)
         
 
 #######################################################Creating bib data############################################################
@@ -241,7 +247,7 @@ def parsing_bib_xml(metadata):
     # Field 245
 
     record['245']['c'] = metadata['author'] + '.'
-    record['245']['a']= metadata['title'].capitalize().rstrip(" ") + ' :'
+    record['245']['a']= metadata['title'].rstrip(" ") + ' :'
     record['245']['b'] = metadata['subtitle'].rstrip(" ") + ' /'
       
     title_words = metadata["title"].split( ' ' )
@@ -511,16 +517,21 @@ def sounz_routine():
 
     """Manages all the process of making digital and pysical record an aquisition part and writes the sounz.txt reports"""
     files = os.listdir( file_folder )
+    files = files[number_of_files_skipped:]
+
     for fl in files:
         print("#"*50)
         print(os.path.join(fl))    
         if ".pdf" in fl:# and fl == "29307_dl copy.pdf":
             print("1. Parse pdf")
             my_dict = parse_pdf(os.path.join(file_folder, fl))
+            if my_dict["title"] in my_titles:
+                my_dict["message"] = my_dict["message"] + " Might be duplicated"
             if my_dict:
                 print("here")
                 print("2.1 Parse template for digital")
                 bib_data = parsing_bib_xml(my_dict)
+                print(bib_data)
                 mms, flag_bib = bib_creating( bib_data )
                 print(mms)
                 with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
@@ -529,11 +540,11 @@ def sounz_routine():
                 pol_no, flag_po = create_po_line( po_data )
                 print( "5.1 Getting pid" )
                 pid, flag_pid =get_pid( pol_no )
-                print( "6.1 Receiving item" )
-                resp,flag_receive = receive_item( pol_no, pid )
-                if flag_bib or flag_po or flag_pid or flag_receive:
-                    mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
-                print(working_folder)
+                #print( "6.1 Receiving item" )
+                # resp,flag_receive = receive_item( pol_no, pid )
+                # if flag_bib or flag_po or flag_pid or flag_receive:
+                #     mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
+                # print(working_folder)
                 print( "7.1 Writing ")
                 with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
                     f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
@@ -547,41 +558,45 @@ def sounz_routine():
                 pol_no_nl, flag_po = create_po_line( po_data )
                 print( "5.2.1 Getting pid for physical Nat Lib" )
                 pid_nl, flag_pid =get_pid( pol_no_nl )
-                print( "6.2.1 Receiving item for physical Nat Lib" )
-                resp,flag_receive = receive_item( pol_no_nl, pid_nl )
-                if flag_bib or flag_po or flag_pid or flag_receive:
-                    mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
-                print(working_folder)
+                #print( "6.2.1 Receiving item for physical Nat Lib" )
+                # resp,flag_receive = receive_item( pol_no_nl, pid_nl )
+                # if flag_bib or flag_po or flag_pid or flag_receive:
+                #     mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
+                # print(working_folder)
                 with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
                     po_data = polfl.read()
                 po_data = re.sub(r"\[MMS\]", mms, po_data)
                 pol_no_atl, flag_po = create_po_line( po_data )
                 print( "5.2.2 Getting pid for physical ATL" )
                 pid_atl, flag_pid =get_pid( pol_no_atl)
-                print( "6.2.2 Receiving item for physical ATL" )
-                resp,flag_receive = receive_item( pol_no_atl, pid_atl )
-                if flag_bib or flag_po or flag_pid or flag_receive:
-                    mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
-                print(working_folder)   
+                # print( "6.2.2 Receiving item for physical ATL" )
+                # resp,flag_receive = receive_item( pol_no_atl, pid_atl )
+                # if flag_bib or flag_po or flag_pid or flag_receive:
+                #     mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
+                # print(working_folder)   
                 print( "7. Writing ")
                 with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
                     f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+            
             # else:
-                with open(text_file_path,"a") as f:
-                    f.write(fl+"||||could not make a record"+"\n")
+                # with open(text_file_path,"a") as f:
+                #     f.write(fl+"||||could not make a record"+"\n")
+                with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"a", encoding="utf-8") as f:
+                    f.write(my_dict["title"]+"\n")
+
             print("8. Reading text file")
     with open (text_file_path,"r") as f:
         data = f.read()
 
-    for line in data.split("\n")[1:-1]:
+    for line in data.split("\n")[:-1]:
         line_list = line.split("|")
         if len(line_list)>1:
             filename = line_list[0]
             mms_id = line_list[1]
-            # po_line = line_list[2]
-            # pid = line_list[3]
-            # pol_no_nl = line_list[2]
-            # pid_nl = line_list[3]
+            po_line = line_list[2]
+            pid = line_list[3]
+            pol_no_nl = line_list[2]
+            pid_nl = line_list[3]
             fl = line_list[0]
             fl_path = os.path.join(file_folder,fl)
             my_dict = parse_pdf(fl_path)

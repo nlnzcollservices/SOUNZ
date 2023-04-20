@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <po_line>
+     <status desc="Manual Packaging">MANUAL_PACKAGING</status>
      <owner desc="Central Acquisition Department">COL</owner>
      <type desc="Print_Book - One Time">PRINTED_BOOK_OT</type>
      <vendor desc="Sounz, Centre For NZ Music">SOUNZ</vendor>
@@ -9,6 +10,7 @@
         <sum>0.00</sum>
         <currency desc="New Zealand Dollar">NZD</currency>
      </price>
+     <discount>20.0</discount>
      <source_type desc="Manual Entry">MANUALENTRY</source_type>
      <reporting_code>-</reporting_code>
      <resource_metadata><mms_id>[MMS]</mms_id></resource_metadata>
