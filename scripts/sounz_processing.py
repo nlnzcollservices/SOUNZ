@@ -25,17 +25,17 @@ from rosetta_sip_factory.sip_builder import build_single_file_sip
 
 
 
-#api_key = ""#Production
-api_key = ""#Sandbox
+prod_api_key = "l8xx24faa60a17b14ef2947fb2e8222f8f24"#Production
+sb_api_key = "l8xx5d24fa2ed92248dfb913722b8e3fb2d6"#Sandbox
 
-file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 04_retain for testing"
+file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 07_2"
 number_of_files_skipped = 0
 working_folder = p = Path(__file__).parents[1]
-template_folder = os.path.join(working_folder,"templates")
+template_folder = os.path.join(working_folder,"assets","templates")
 sip_folder = os.path.join(working_folder,"SIP")
 report_folder = os.path.join(working_folder,"log","reports")
 rosetta_folder = r"Y:\ndha\pre-deposit_prod\server_side_deposits\prod\ld_scheduled\oneoff"
-
+sounz_set = os.path.join(working_folder,"assets","SOUNZ_titles.txt")
 try:
     with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"r", encoding="utf-8") as f:
         data = f.read()
@@ -134,7 +134,7 @@ class SIPMaker():
                 subt_part = "_".join(subtitle_list[1:3])
             else:
                 subt_part = subtitle_list[0]
-            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace("'","").replace("?","").replace("/","_")+"_"+subt_part + "_"+self.year)
+            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace("'","").replace(':',"_").replace("?","").replace("/","_").replace(",","_")+"_"+subt_part + "_"+self.year)
             if self.output_folder.startswith("for_"):
                 self.output_folder = os.path.join(sip_folder, subt_part + "_"+self.year)
             print(self.filepath )
@@ -326,7 +326,7 @@ def parsing_bib_xml_phys(metadata):
 
 
 
-def bib_creating( value  ): 
+def bib_creating( value , key  ): 
     """Makes record in alma and extracts mms id
     Parameters:
         value(str) - bib record in xml format 
@@ -335,6 +335,11 @@ def bib_creating( value  ):
         mms (str) - Alma mms id from new record
 
     """
+
+    if key == "sb":
+        api_key = sb_api_key
+    if key == "prod":
+        api_key = prod_api_key
 
     flag = False
     url = r'https://api-ap.hosted.exlibrisgroup.com/almaws/v1/bibs'
@@ -357,7 +362,7 @@ def bib_creating( value  ):
    
     return( mms, flag )
 
-def create_po_line( values ):
+def create_po_line( values ,key ):
 
     """Makes PO_line
 
@@ -367,7 +372,10 @@ def create_po_line( values ):
         flag(bool) - True if po_line was not created
         pol (str) - Alma po_line number
     """
-
+    if key == "sb":
+        api_key = sb_api_key
+    if key == "prod":
+        api_key = prod_api_key
     flag = False
     url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines?apikey={}'.format(api_key)
     headers = {'content-Type':'application/xml'}
@@ -400,7 +408,7 @@ def get_po_line(pol):
     print( '{}\t{}\n'.format( r, r.text ) )
 
 
-def get_pid( pol ):
+def get_pid( pol , key ):
 
     """ Gets item pid via Alma API
     Parameters:
@@ -412,7 +420,10 @@ def get_pid( pol ):
         flag(bool) - True if error
 
     """
-
+    if key == "sb":
+        api_key = sb_api_key
+    if key == "prod":
+        api_key = prod_api_key
     flag = False
     url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines/{}?apikey={}'.format(pol, api_key)
     r = requests.get( url )
@@ -431,7 +442,7 @@ def get_pid( pol ):
 
 
 
-def receive_item( pol, pid ):
+def receive_item( pol, pid, key ):
 
     """ Receives existing item via Alma API
     Parameters:
@@ -442,6 +453,10 @@ def receive_item( pol, pid ):
         statement(str) - Received or Not Received.    
 
     """
+    if key == "sb":
+        api_key = sb_api_key
+    if key == "prod":
+        api_key = prod_api_key
     flag = False
     url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines/{}/items/{}?op=receive&apikey={}'.format( pol, pid, api_key )
     # print(url)
@@ -461,7 +476,7 @@ def receive_item( pol, pid ):
             return( "Not Received", flag)
 
 
-def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid, flag_receive):
+def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid, flag_receive ,key):
 
     """Checks flags and reruning failed part of the process
 
@@ -486,26 +501,26 @@ def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid
     
     if flag_bib:
         print( "3. Creating bib record" )
-        mms, flag_bib = bib_creating( bib_data )
+        mms, flag_bib = bib_creating( bib_data, key )
         flag_bib = False
         print (mms)
 
     if not flag_bib and  flag_po:
         print( "4. Creating PO line" )
         po_data = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><po_line><owner desc="Central Acquisition Department">COL</owner>     <type desc="Print_Book - One Time">PRINTED_BOOK_OT</type><vendor desc="Sounz, Centre For NZ Music">SOUNZ</vendor><vendor_account>SOUNZ-LD</vendor_account><acquisition_method desc="Legal Deposit">LEGAL_DEPOSIT</acquisition_method><price><sum>0.00</sum><currency desc="New Zealand Dollar">NZD</currency></price><reporting_code>DIGISCORE</reporting_code><resource_metadata><mms_id>[MMS]</mms_id></resource_metadata><locations><location><quantity>1</quantity><library desc="Alexander Turnbull Library">ATL</library><shelving_location>ATL.DA</shelving_location><copies><copy><item_policy desc="Heritage">HERITAGE</item_policy></copy></copies></location></locations><material_type desc="Digital File">KEYS</material_type></po_line>'%( mms )   
-        pol_no, flag_po = create_po_line( po_data )
+        pol_no, flag_po = create_po_line( po_data, key)
         flag_po = False
         print( pol_no )
 
     if not flag_bib and not flag_po and flag_pid:
         print( "5. Getting pid" )
-        pid, flag_pid =get_pid( pol_no )
+        pid, flag_pid =get_pid( pol_no , key )
         flag_pid = False
         print( pid )
 
     if not flag_bib and not flag_po and not flag_pid and flag_receive:
         print( "6. Receiving item" )
-        resp, flag_receive = receive_item( pol_no, pid )  
+        resp, flag_receive = receive_item( pol_no, pid , key )  
         flag_receive = False      
     return( mms, pol_no, pid, resp )
 
@@ -513,106 +528,149 @@ def checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_po, flag_pid
 
 ######################################################START OF SCRIPT################################################################      
 
-def sounz_routine():
+def sounz_routine(key):
 
     """Manages all the process of making digital and pysical record an aquisition part and writes the sounz.txt reports"""
     files = os.listdir( file_folder )
     files = files[number_of_files_skipped:]
+    lines = []
+    titles = []
+    authors = []
+    subtitles = []
+    mmss = []
+    if key == "sb":
+        api_key = sb_api_key
+    if key == "prod":
+        api_key = prod_api_key
+    with open(sounz_set,"r",encoding = "utf-8") as f:
+        data = f.read()
+    for line in data.split("\n")[:-1]:
+        print(line)
+
+        line_list = line.split("||")
+
+        titles.append(line_list[0])
+        subtitles.append(line_list[1])
+        authors.append(line_list[2])
+        mmss.append(line_list[3])
+
+
+
 
     for fl in files:
+        dup_flag = False
+        message_flag =True
         print("#"*50)
         print(os.path.join(fl))    
         if ".pdf" in fl:# and fl == "29307_dl copy.pdf":
             print("1. Parse pdf")
             my_dict = parse_pdf(os.path.join(file_folder, fl))
-            if my_dict["title"] in my_titles:
-                my_dict["message"] = my_dict["message"] + " Might be duplicated"
-            if my_dict:
-                print("here")
-                print("2.1 Parse template for digital")
-                bib_data = parsing_bib_xml(my_dict)
-                print(bib_data)
-                mms, flag_bib = bib_creating( bib_data )
-                print(mms)
-                with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
-                    po_data = polfl.read()
-                po_data = re.sub(r"\[MMS\]", mms, po_data)
-                pol_no, flag_po = create_po_line( po_data )
-                print( "5.1 Getting pid" )
-                pid, flag_pid =get_pid( pol_no )
-                #print( "6.1 Receiving item" )
-                # resp,flag_receive = receive_item( pol_no, pid )
-                # if flag_bib or flag_po or flag_pid or flag_receive:
-                #     mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
-                # print(working_folder)
-                print( "7.1 Writing ")
-                with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                    f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
-                print("2.2 Parse template for physical")
-                bib_data = parsing_bib_xml_phys(my_dict)
-                mms, flag_bib = bib_creating( bib_data )
-                print(mms)
-                with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
-                    po_data = polfl.read()
-                po_data = re.sub(r"\[MMS\]", mms, po_data)
-                pol_no_nl, flag_po = create_po_line( po_data )
-                print( "5.2.1 Getting pid for physical Nat Lib" )
-                pid_nl, flag_pid =get_pid( pol_no_nl )
-                #print( "6.2.1 Receiving item for physical Nat Lib" )
-                # resp,flag_receive = receive_item( pol_no_nl, pid_nl )
-                # if flag_bib or flag_po or flag_pid or flag_receive:
-                #     mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
-                # print(working_folder)
-                with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
-                    po_data = polfl.read()
-                po_data = re.sub(r"\[MMS\]", mms, po_data)
-                pol_no_atl, flag_po = create_po_line( po_data )
-                print( "5.2.2 Getting pid for physical ATL" )
-                pid_atl, flag_pid =get_pid( pol_no_atl)
-                # print( "6.2.2 Receiving item for physical ATL" )
-                # resp,flag_receive = receive_item( pol_no_atl, pid_atl )
-                # if flag_bib or flag_po or flag_pid or flag_receive:
-                #     mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
-                # print(working_folder)   
-                print( "7. Writing ")
+            for i,t in enumerate(titles):
+                if  titles[i] == my_dict["title"]:
+                    if (subtitles[i] == my_dict["subtitle"] and authors[i] == my_dict["author"]):
+                        dup_flag = True
+                        my_dup_mms = str(mmss[i])
+                    elif (subtitles[i] == my_dict["subtitle"] or authors[i] == my_dict["author"]):
+                        my_dict["message"] = my_dict["message"] + " Check for duplicate: " + mmss[i]
+            if not dup_flag:
+                if my_dict["title"] in titles and my_dict["subtitle"] in subtitles and my_dict["author"] in authors:
+                    my_dict["message"] = my_dict["message"] + " Might be duplicated"
+                if my_dict:
+                    print("here")
+                    print("2.1 Parse template for digital")
+                    bib_data = parsing_bib_xml(my_dict)
+                    print(bib_data)
+                    mms, flag_bib = bib_creating( bib_data, key )
+                    print(mms)
+                    with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
+                        po_data = polfl.read()
+                    po_data = re.sub(r"\[MMS\]", mms, po_data)
+                    pol_no, flag_po = create_po_line( po_data, key )
+                    print( "5.1 Getting pid" )
+                    pid, flag_pid =get_pid( pol_no, key )
+                    #print( "6.1 Receiving item" )
+                    # resp,flag_receive = receive_item( pol_no, pid, key)
+                    # if flag_bib or flag_po or flag_pid or flag_receive:
+                    #     mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
+                    # print(working_folder)
+                    print( "7.1 Writing ")
+                    with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+                        f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+                    print("2.2 Parse template for physical")
+                    bib_data = parsing_bib_xml_phys(my_dict)
+                    mms, flag_bib = bib_creating( bib_data, key)
+                    print(mms)
+                    with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
+                        po_data = polfl.read()
+                    po_data = re.sub(r"\[MMS\]", mms, po_data)
+                    pol_no_nl, flag_po = create_po_line( po_data , key)
+                    print( "5.2.1 Getting pid for physical Nat Lib" )
+                    pid_nl, flag_pid =get_pid( pol_no_nl, key )
+                    #print( "6.2.1 Receiving item for physical Nat Lib" )
+                    # resp,flag_receive = receive_item( pol_no_nl, pid_nl, key )
+                    # if flag_bib or flag_po or flag_pid or flag_receive:
+                    #     mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
+                    # print(working_folder)
+                    with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
+                        po_data = polfl.read()
+                    po_data = re.sub(r"\[MMS\]", mms, po_data)
+                    pol_no_atl, flag_po = create_po_line( po_data, key )
+                    print( "5.2.2 Getting pid for physical ATL" )
+                    pid_atl, flag_pid =get_pid( pol_no_atl, key)
+                    # print( "6.2.2 Receiving item for physical ATL" )
+                    # resp,flag_receive = receive_item( pol_no_atl, pid_atl,key )
+                    # if flag_bib or flag_po or flag_pid or flag_receive:
+                    #     mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
+                    # print(working_folder)   
+                    print( "7. Writing ")
+                    with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+                        f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+                
+                # else:
+                    # with open(text_file_path,"a") as f:
+                    #     f.write(fl+"||||could not make a record"+"\n")
+                    if key=="prod":
+                        with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"a", encoding="utf-8") as f:
+                            f.write(my_dict["title"]+"\n")
+                    if key =="prod":
+                        with open(sounz_set,"a",encoding= "utf-8") as f:
+                            f.write(my_dict["title"] + "||"+my_dict["subtitle"]+"||"+my_dict["author"]+"||"+mms+"\n")
+            else:
                 with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                    f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
-            
-            # else:
-                # with open(text_file_path,"a") as f:
-                #     f.write(fl+"||||could not make a record"+"\n")
-                with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"a", encoding="utf-8") as f:
-                    f.write(my_dict["title"]+"\n")
+                    f.write(fl+"| | | | | |"+my_dict["title"]+"|"+my_dict["message"]+ r"Dup found {}".format(my_dup_mms) + "\n")
 
-            print("8. Reading text file")
+
+    print("8. Reading text file")
     with open (text_file_path,"r") as f:
         data = f.read()
 
     for line in data.split("\n")[:-1]:
-        line_list = line.split("|")
-        if len(line_list)>1:
-            filename = line_list[0]
-            mms_id = line_list[1]
-            po_line = line_list[2]
-            pid = line_list[3]
-            pol_no_nl = line_list[2]
-            pid_nl = line_list[3]
-            fl = line_list[0]
-            fl_path = os.path.join(file_folder,fl)
-            my_dict = parse_pdf(fl_path)
-            print("9. Making sip")
-            my_sip =  SIPMaker(title = my_dict["title"], subtitle = my_dict["subtitle"], mms = mms_id, year = my_dict["year"] ,filepath = os.path.join(file_folder,fl))
-            if my_sip.flag:
-                print(fl, " - sip done")
+        if not "dup found " in line:
+            line_list = line.split("|")
+            if len(line_list)>1:
+                filename = line_list[0]
+                mms_id = line_list[1]
+                po_line = line_list[2]
+                pid = line_list[3]
+                pol_no_nl = line_list[2]
+                pid_nl = line_list[3]
+                fl = line_list[0]
+                fl_path = os.path.join(file_folder,fl)
+                my_dict = parse_pdf(fl_path)
+                print("9. Making sip")
+                my_sip =  SIPMaker(title = my_dict["title"], subtitle = my_dict["subtitle"], mms = mms_id, year = my_dict["year"] ,filepath = os.path.join(file_folder,fl))
+                if my_sip.flag:
+                    print(fl, " - sip done")
+                else:
+                    print(fl, " - failed to build sip")
+    if key == "prod":
+        print("Check SIPs and copy")
+        for sip in os.listdir(sip_folder):
+            sip_path = os.path.join(sip_folder, sip)
+            if not sip_checker(sip_path):
+                shutil.move(sip_path, rosetta_folder)
             else:
-                print(fl, " - failed to build sip")
-    print("Check SIPs and copy")
-    for sip in os.listdir(sip_folder):
-        sip_path = os.path.join(sip_folder, sip)
-        if not sip_checker(sip_path):
-            shutil.move(sip_path, rosetta_folder)
-        else:
-            print("Check SIP - ",sip_path)
+                print("Check SIP - ",sip_path)
 
 
 ##########################################SETTINGS##############################################################    
@@ -624,8 +682,16 @@ print(text_file_path)
 
 
 def main():
-    #check_from_text_file()
-    sounz_routine()
+    my_key = "prod"
+    if my_key == "sb":
+        print("Working in SandBox")
+    if my_key == "prod":
+        print("Working in Production")
+    for sip in os.listdir(sip_folder):
+        sip_path = os.path.join(sip_folder, sip)
+        shutil.rmtree(sip_path)
+
+    sounz_routine(my_key)
     
 if __name__ == '__main__':
     main()
