@@ -28,7 +28,7 @@ from rosetta_sip_factory.sip_builder import build_single_file_sip
 prod_api_key = "l8xx24faa60a17b14ef2947fb2e8222f8f24"#Production
 sb_api_key = "l8xx5d24fa2ed92248dfb913722b8e3fb2d6"#Sandbox
 
-file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 07_2"
+file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 08"
 number_of_files_skipped = 0
 working_folder = p = Path(__file__).parents[1]
 template_folder = os.path.join(working_folder,"assets","templates")

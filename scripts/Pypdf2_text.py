@@ -106,6 +106,12 @@ def parse_pdf ( file_path):
 	print(page_content0)
 	page_content0 = clean_content(page_content0)
 
+	page1 = read_pdf.pages[1]
+
+	page_content1 = page1.extract_text()
+	print(page_content1)
+
+
 	title = page0.extract_text().split("Thank you")[0].replace("\n","").replace("  "," ").lstrip(" ").rstrip(" ")
 	# print("Title: ", title)
 	copyright_index = None
@@ -128,11 +134,20 @@ def parse_pdf ( file_path):
 		print("here1")
 		for ind,e in enumerate(page_content0):
 			if page_content0[ind].startswith("for") and not subtitle_flag:
-				if copyright_index>ind:
-					subtitle = " ".join(page_content0[ind:copyright_index])
-				else:
-					subtitle=page_content0[ind]
-				subtitle_flag = True
+				if not page_content0[ind].split(" ")[1][0].isupper():
+					if copyright_index>ind:
+						subtitle = " ".join(page_content0[ind:copyright_index])
+					else:
+						subtitle=page_content0[ind]
+					subtitle_flag = True
+		if not subtitle_flag:
+			for ind,e in enumerate(page_content0):
+				if page_content0[ind].startswith("for") and not subtitle_flag:
+					if copyright_index>ind:
+						subtitle = " ".join(page_content0[ind:copyright_index])
+					else:
+						subtitle=page_content0[ind]
+
 	else:
 		print("here2")
 		for ind,e in enumerate(page_content0):
@@ -171,7 +186,14 @@ def parse_pdf ( file_path):
 	try:
 		copyright_year = cleaned(copyright_year)
 	except:
-		copyright_year = str(current_year)
+		try:
+			copyright_year = re.findall(r'\b\d{4}\b', page_content1)[0]
+		except:
+			print("No year!!!")
+			quit()
+	if not subtitle:
+		message = "Check subtitle"
+		subtitle = ""
 	if cleaned(subtitle) in cleaned(title):
 		message = " Check title"
 
@@ -180,6 +202,10 @@ def parse_pdf ( file_path):
 	if not copyright_holder:
 		message += " Check author"
 		copyright_holder = ""
+	if "arranged" in copyright_holder:
+		subtitle = "arranged " + subtitle
+		copyright_holder = copyright_holder.replace("arranged","").rstrip(" ").lstrip(" ")
+
 
 
 	print ({"title":cleaned(title), "subtitle":cleaned(subtitle), "year":copyright_year,"author":cleaned(copyright_holder),"message":message})
