@@ -210,7 +210,7 @@ def check_from_text_file():
 
     """Checking if all records in sounz.txt report are exist"""
 
-    with open (text_file_path,"r") as f:
+    with open (text_file_path,"r",encoding="utf-8") as f:
         data = f.read()
 
     for line in data.split("\n")[:-1]:
