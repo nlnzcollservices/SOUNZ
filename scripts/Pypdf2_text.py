@@ -189,11 +189,12 @@ def parse_pdf ( file_path):
 		try:
 			copyright_year = re.findall(r'\b\d{4}\b', page_content1)[0]
 		except:
+
 			print("No year!!!")
 			quit()
 			#if script failed here, you can process this file individually and set copyright year here
 			# comment quit() and uncoment
-			#copyright_year = "year you would like"
+			#copyright_year = "2017"
 	if not subtitle:
 		message = "Check subtitle"
 		subtitle = ""
@@ -218,6 +219,8 @@ def parse_pdf ( file_path):
 
 
 def main():
+
+	filefolder = "Y:\ndha\pre-deposit_prod\LD_working\SOUNZ\tests\pypdf_text_test\files"
 
 	files = os.listdir( file_folder )
 	for fl in files:

@@ -23,12 +23,10 @@ from Pypdf2_text import parse_pdf
 from pathlib import Path
 from rosetta_sip_factory.sip_builder import build_single_file_sip
 
-
-
 prod_api_key = "l8xx24faa60a17b14ef2947fb2e8222f8f24"#Production
 sb_api_key = "l8xx5d24fa2ed92248dfb913722b8e3fb2d6"#Sandbox
-
-file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 08"
+#Change input folder here:
+file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 11_mod"
 number_of_files_skipped = 0
 working_folder = p = Path(__file__).parents[1]
 template_folder = os.path.join(working_folder,"assets","templates")
@@ -134,11 +132,12 @@ class SIPMaker():
                 subt_part = "_".join(subtitle_list[1:3])
             else:
                 subt_part = subtitle_list[0]
-            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace("'","").replace(':',"_").replace("?","").replace("/","_").replace(",","_")+"_"+subt_part + "_"+self.year)
+            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace('"',"").replace("'","").replace(':',"_").replace("?","").replace("/","_").replace("\xa0","").replace(",","_").replace(".","")+"_"+subt_part + "_"+self.year)
             if self.output_folder.startswith("for_"):
                 self.output_folder = os.path.join(sip_folder, subt_part + "_"+self.year)
             print(self.filepath )
             print(self.output_folder)
+            #print(repr(self.output_folder))
             self.pref = "SOUNZ_"
             
             try:
@@ -210,7 +209,7 @@ def check_from_text_file():
 
     """Checking if all records in sounz.txt report are exist"""
 
-    with open (text_file_path,"r",encoding="utf-8") as f:
+    with open (text_file_path,"r") as f:
         data = f.read()
 
     for line in data.split("\n")[:-1]:
@@ -565,6 +564,8 @@ def sounz_routine(key):
         if ".pdf" in fl:# and fl == "29307_dl copy.pdf":
             print("1. Parse pdf")
             my_dict = parse_pdf(os.path.join(file_folder, fl))
+
+    #####################################################Comment this part if you need only make sips from reports############################################3
             for i,t in enumerate(titles):
                 if  titles[i] == my_dict["title"]:
                     if (subtitles[i] == my_dict["subtitle"] and authors[i] == my_dict["author"]):
@@ -638,10 +639,12 @@ def sounz_routine(key):
             else:
                 with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
                     f.write(fl+"| | | | | |"+my_dict["title"]+"|"+my_dict["message"]+ r"Dup found {}".format(my_dup_mms) + "\n")
+    #
+    #####################################################Comment this part if you need only make sips from reports############################################3
 
 
     print("8. Reading text file")
-    with open (text_file_path,"r") as f:
+    with open (text_file_path,"r", encoding="utf-8") as f:
         data = f.read()
 
     for line in data.split("\n")[:-1]:
