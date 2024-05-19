@@ -191,10 +191,10 @@ def parse_pdf ( file_path):
 		except:
 
 			print("No year!!!")
-			quit()
+			#quit()
 			#if script failed here, you can process this file individually and set copyright year here
 			# comment quit() and uncoment
-			#copyright_year = "2017"
+			copyright_year = ""
 	if not subtitle:
 		message = "Check subtitle"
 		subtitle = ""

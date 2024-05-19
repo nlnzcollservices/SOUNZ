@@ -19,14 +19,20 @@ import glob
 from openpyxl import Workbook,load_workbook
 import time
 import datetime
+print("here")
 from Pypdf2_text import parse_pdf
+print("here2")
 from pathlib import Path
 from rosetta_sip_factory.sip_builder import build_single_file_sip
+import traceback
+
+
 
 prod_api_key = "l8xx24faa60a17b14ef2947fb2e8222f8f24"#Production
 sb_api_key = "l8xx5d24fa2ed92248dfb913722b8e3fb2d6"#Sandbox
+
 #Change input folder here:
-file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2023 11_mod"
+file_folder = r"Y:\ndha\CS_legaldeposit\LD\one-time\sounz\2024 05"
 number_of_files_skipped = 0
 working_folder = p = Path(__file__).parents[1]
 template_folder = os.path.join(working_folder,"assets","templates")
@@ -41,6 +47,7 @@ try:
 except:
 
     my_titles = []
+
 ####################################################################################################################
 NON_FILING_WORDS = ( 'the', 'an', 'a' )
 #####################################################Current Time Class#####################################
@@ -86,30 +93,57 @@ class Times(object):
          
         
 ####################################################Writings IN FILE Class################################################################
-class SIPMaker():
 
+def sanitize_filename(filename):
+    """
+    Sanitize the filename by removing or replacing non-ASCII characters.
+    Here we simply remove them, but you could extend this to replace
+    them with their transliterated counterparts or handle them as needed.
+    """
+    return ''.join(char for char in filename if char.isascii())
 
-# Volume = dcterms:bibliographicCitation
-# Issue = dcterms:issued
-# Number = dcterms:accrualPeriodicity
-# Year = dc:date
-# Month = dcterms:available
-# Day = dc:coverage
+def replace_macrons(s):
+    macron_replacement = {
+        "ā": "a", "ē": "e", "ī": "i", "ō": "o", "ū": "u",
+        "Ā": "A", "Ē": "E", "Ī": "I", "Ō": "O", "Ū": "U"
+    }
+    return s.translate(str.maketrans(macron_replacement))
 
+def clean_name(filename):
+    """
+    Clean the path by replacing or removing problematic characters.
 
-    def __init__(self, title, subtitle, year ,filepath, mms ):
+    Parameters:
+    - filename (str): The original file filename.
 
-        """This class is used for making SIPs from existing foler
-        Parameters:
-            title (str) - title
-            chron_i (str) - year
-
-        Returns:
-            None
-
+    Returns:
+    - str: The cleaned ffilename.
     """
 
-        
+    replacements = {
+        " ": "_",  # Replace spaces with underscores
+        ":": "",   # Remove colons
+        "?": "",    # Remove question marks
+        "<": "",    # Remove less than
+        ">": "",    # Remove greater than
+        "|": "",    # Remove pipe
+        "*": "",    # Remove asterisks
+        "(":"",
+        "(":""
+
+        # Add any other specific replacements you need.
+    }
+
+    filename = re.sub(r'[^\x00-\x7F]+', '', filename)
+
+    # Apply replacements
+    for old_char, new_char in replacements.items():
+        filename = filename.replace(old_char, new_char)
+
+    return filename
+
+class SIPMaker():
+    def __init__(self, title, subtitle, year, filepath, mms):
         self.flag = False
         self.title = title
         self.year = year
@@ -118,54 +152,72 @@ class SIPMaker():
         self.subtitle = subtitle
         self.make_SIP()
 
-
-
     def make_SIP(self):
-            """Method is used for making SIPs from description information
+        self.subtitle = self.subtitle.strip("()-:_,!").replace(" and ", "").replace("for ", "")
+        clean_title = replace_macrons(self.title.replace(" ", "_").replace('"', "").replace("'", "").replace(':', "_").replace("?", "").replace("/", "_").replace("\xa0", "").replace(",", "_").replace(".", ""))
+        safe_title = sanitize_filename(clean_title)
+        
+        subtitle_list = self.subtitle.split(" ")
+        if len(subtitle_list) > 3:
+            subt_part = "_".join(subtitle_list[1:3])
+        else:
+            subt_part = subtitle_list[0]
+        clean_subtitle = replace_macrons(subt_part)
+        safe_subtitle = sanitize_filename(clean_subtitle)
 
-            Returns:
-                bool  - True, if built, False otherwise
-            """
-            self.subtitle = self.subtitle.strip("()-:_,!").replace(" and ","").replace("for ","")
-            subtitle_list = self.subtitle.split(" ")
-            if len(subtitle_list) >3:
-                subt_part = "_".join(subtitle_list[1:3])
-            else:
-                subt_part = subtitle_list[0]
-            self.output_folder = os.path.join(sip_folder, self.title.replace(" ","_").replace('"',"").replace("'","").replace(':',"_").replace("?","").replace("/","_").replace("\xa0","").replace(",","_").replace(".","")+"_"+subt_part + "_"+self.year)
-            if self.output_folder.startswith("for_"):
-                self.output_folder = os.path.join(sip_folder, subt_part + "_"+self.year)
-            print(self.filepath )
-            print(self.output_folder)
-            #print(repr(self.output_folder))
-            self.pref = "SOUNZ_"
+
+
+
+        # Sanitize the filename to remove non-ASCII characters
+
+
+
+        self.output_folder = os.path.join(sip_folder, safe_title + "_" + safe_subtitle + "_" + self.year)
+        
+        if self.output_folder.startswith("for_"):
+            self.output_folder = os.path.join(sip_folder, safe_subtitle + "_" + self.year)
+
+
+
+        print(self.filepath)
+        print(self.output_folder)
+        print("here0")
+        print(safe_title)
+        print("here1")
+        self.pref = "SOUNZ_"
+        print(clean_name(self.pref+safe_title+"_"+clean_subtitle+"_"+self.year))
+        
+
             
-            try:
-                build_single_file_sip (
-                                    ie_dmd_dict=[{"dc:date":self.year,  "dc:title":self.title}],
-                                    filepath=self.filepath,
-                                    generalIECharacteristics=[{"IEEntityType":"OneOffIE","UserDefinedA":"SOUNZ"}],
-                                    objectIdentifier= [{"objectIdentifierType":"ALMAMMS", "objectIdentifierValue":self.mms}],
-                                    accessRightsPolicy=[{"policyId":"200"}],
-                                    digital_original=True,
-                                    sip_title=self.pref+self.title+"_"+subt_part+"_"+self.year,
-                                    output_dir=self.output_folder 
-                                )
-                print('Done')
+        try:
+            build_single_file_sip (
+                                ie_dmd_dict=[{"dc:date":self.year,  "dc:title":safe_title}],
+                                filepath=self.filepath,
+                                generalIECharacteristics=[{"IEEntityType":"OneOffIE","UserDefinedA":"SOUNZ"}],
+                                objectIdentifier= [{"objectIdentifierType":"ALMAMMS", "objectIdentifierValue":self.mms}],
+                                accessRightsPolicy=[{"policyId":"200"}],
+                                digital_original=True,
+                                sip_title=clean_name(self.pref+safe_title+"_"+clean_subtitle+"_"+self.year),
+                                output_dir=self.output_folder 
+                            )
+            print('Done')
 
-                report_name = "report_sips"+str(dt.now().strftime("_%d%m%Y"))+".txt"
-                with open(os.path.join(report_folder, report_name),"a") as f:
-                    f.write("{}|{}|{}".format(self.title,self.mms, self.year))
-                    f.write("\n")
-                self.flag =  True
+            report_name = "report_sips"+str(dt.now().strftime("_%d%m%Y"))+".txt"
+            with open(os.path.join(report_folder, report_name), "a", encoding='utf-8') as f:
+                f.write("{}|{}|{}".format(self.title, self.mms, self.year))
+                f.write("\n")
+            self.flag = True
 
+        except Exception as e:
 
-            except Exception as e:
-                report_name = "report_sips"+str(dt.now().strftime("_%d%m%Y"))+".txt"
-                with open(os.path.join(report_folder, report_name),"a") as f:
-                    f.write("{}|{}|{}|Faild: {}".format(self.title,self.mms, self.year,str(e)))
-                    f.write("\n")
-                
+            print("Failed to create SIP:", e)
+            traceback.print_exc()  # This will print the full stack trace
+            report_name = "report_sips" + str(dt.now().strftime("_%d%m%Y")) + ".txt"
+            # Specify encoding as 'utf-8' when opening the file
+            with open(os.path.join(report_folder, report_name), "a", encoding='utf-8') as f:
+                f.write("{}|{}|{}|Failed: {}".format(self.title, self.mms, self.year, str(e)))
+                f.write("\n")
+            
 
 
 
@@ -379,6 +431,7 @@ def create_po_line( values ,key ):
     url = 'https://api-eu.hosted.exlibrisgroup.com/almaws/v1/acq/po-lines?apikey={}'.format(api_key)
     headers = {'content-Type':'application/xml'}
     r = requests.post( url, headers=headers, data = values )
+    print(r.text)
     grab = BeautifulSoup( r.text, 'lxml-xml' )
     try:
         POL = grab.find( 'po_line' ).find( 'number' ).string#looking for po-line number  
@@ -433,7 +486,7 @@ def get_pid( pol , key ):
         statement = "PID: {}".format( pid )
         print( statement )
     except AttributeError as e:
-        statement =  "Error during getting pid {}\t{}\t{}\n".format( POL, type( e ),str( e ) ) 
+        statement =  "Error during getting pid {}\t{}\t{}\n".format( pol, type( e ),str( e ) ) 
         print( statement )
         pid = None
         flag = True
@@ -566,79 +619,79 @@ def sounz_routine(key):
             my_dict = parse_pdf(os.path.join(file_folder, fl))
 
     #####################################################Comment this part if you need only make sips from reports############################################3
-            for i,t in enumerate(titles):
-                if  titles[i] == my_dict["title"]:
-                    if (subtitles[i] == my_dict["subtitle"] and authors[i] == my_dict["author"]):
-                        dup_flag = True
-                        my_dup_mms = str(mmss[i])
-                    elif (subtitles[i] == my_dict["subtitle"] or authors[i] == my_dict["author"]):
-                        my_dict["message"] = my_dict["message"] + " Check for duplicate: " + mmss[i]
-            if not dup_flag:
-                if my_dict["title"] in titles and my_dict["subtitle"] in subtitles and my_dict["author"] in authors:
-                    my_dict["message"] = my_dict["message"] + " Might be duplicated"
-                if my_dict:
-                    print("here")
-                    print("2.1 Parse template for digital")
-                    bib_data = parsing_bib_xml(my_dict)
-                    print(bib_data)
-                    mms, flag_bib = bib_creating( bib_data, key )
-                    print(mms)
-                    with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
-                        po_data = polfl.read()
-                    po_data = re.sub(r"\[MMS\]", mms, po_data)
-                    pol_no, flag_po = create_po_line( po_data, key )
-                    print( "5.1 Getting pid" )
-                    pid, flag_pid =get_pid( pol_no, key )
-                    #print( "6.1 Receiving item" )
-                    # resp,flag_receive = receive_item( pol_no, pid, key)
-                    # if flag_bib or flag_po or flag_pid or flag_receive:
-                    #     mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
-                    # print(working_folder)
-                    print( "7.1 Writing ")
-                    with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                        f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
-                    print("2.2 Parse template for physical")
-                    bib_data = parsing_bib_xml_phys(my_dict)
-                    mms, flag_bib = bib_creating( bib_data, key)
-                    print(mms)
-                    with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
-                        po_data = polfl.read()
-                    po_data = re.sub(r"\[MMS\]", mms, po_data)
-                    pol_no_nl, flag_po = create_po_line( po_data , key)
-                    print( "5.2.1 Getting pid for physical Nat Lib" )
-                    pid_nl, flag_pid =get_pid( pol_no_nl, key )
-                    #print( "6.2.1 Receiving item for physical Nat Lib" )
-                    # resp,flag_receive = receive_item( pol_no_nl, pid_nl, key )
-                    # if flag_bib or flag_po or flag_pid or flag_receive:
-                    #     mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
-                    # print(working_folder)
-                    with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
-                        po_data = polfl.read()
-                    po_data = re.sub(r"\[MMS\]", mms, po_data)
-                    pol_no_atl, flag_po = create_po_line( po_data, key )
-                    print( "5.2.2 Getting pid for physical ATL" )
-                    pid_atl, flag_pid =get_pid( pol_no_atl, key)
-                    # print( "6.2.2 Receiving item for physical ATL" )
-                    # resp,flag_receive = receive_item( pol_no_atl, pid_atl,key )
-                    # if flag_bib or flag_po or flag_pid or flag_receive:
-                    #     mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
-                    # print(working_folder)   
-                    print( "7. Writing ")
-                    with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                        f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+            # for i,t in enumerate(titles):
+            #     if  titles[i] == my_dict["title"]:
+            #         if (subtitles[i] == my_dict["subtitle"] and authors[i] == my_dict["author"]):
+            #             dup_flag = True
+            #             my_dup_mms = str(mmss[i])
+            #         elif (subtitles[i] == my_dict["subtitle"] or authors[i] == my_dict["author"]):
+            #             my_dict["message"] = my_dict["message"] + " Check for duplicate: " + mmss[i]
+            # if not dup_flag:
+            #     if my_dict["title"] in titles and my_dict["subtitle"] in subtitles and my_dict["author"] in authors:
+            #         my_dict["message"] = my_dict["message"] + " Might be duplicated"
+            #     if my_dict:
+            #         print("here")
+            #         print("2.1 Parse template for digital")
+            #         bib_data = parsing_bib_xml(my_dict)
+            #         print(bib_data)
+            #         mms, flag_bib = bib_creating( bib_data, key )
+            #         print(mms)
+            #         with open (os.path.join(template_folder, "PO_line.xml"),"r") as polfl:
+            #             po_data = polfl.read()
+            #         po_data = re.sub(r"\[MMS\]", mms, po_data)
+            #         pol_no, flag_po = create_po_line( po_data, key )
+            #         print( "5.1 Getting pid" )
+            #         pid, flag_pid =get_pid( pol_no, key )
+            #         #print( "6.1 Receiving item" )
+            #         # resp,flag_receive = receive_item( pol_no, pid, key)
+            #         # if flag_bib or flag_po or flag_pid or flag_receive:
+            #         #     mms, pol, pid, resp = checker(fn, bib_data, po_data, mms, pol_no, pid, flag_bib, flag_pol, flag_pid, flag_receive)
+            #         # print(working_folder)
+            #         print( "7.1 Writing ")
+            #         with open(os.path.join(working_folder,"log","reports","sounz_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+            #             f.write(fl+"|"+mms+"|"+pol_no+"|"+pid+"|"+ "|||"+my_dict["title"]+"|"+my_dict["message"]+"\n")
+            #         print("2.2 Parse template for physical")
+            #         bib_data = parsing_bib_xml_phys(my_dict)
+            #         mms, flag_bib = bib_creating( bib_data, key)
+            #         print(mms)
+            #         with open (os.path.join(template_folder, "PO_line_phys_nl.xml"),"r") as polfl:
+            #             po_data = polfl.read()
+            #         po_data = re.sub(r"\[MMS\]", mms, po_data)
+            #         pol_no_nl, flag_po = create_po_line( po_data , key)
+            #         print( "5.2.1 Getting pid for physical Nat Lib" )
+            #         pid_nl, flag_pid =get_pid( pol_no_nl, key )
+            #         #print( "6.2.1 Receiving item for physical Nat Lib" )
+            #         # resp,flag_receive = receive_item( pol_no_nl, pid_nl, key )
+            #         # if flag_bib or flag_po or flag_pid or flag_receive:
+            #         #     mms, pol_nl, pid_nl, resp = checker(fn, bib_data, po_data, mms, pol_no_nl, pid_nl, flag_bib, flag_pol, flag_pid, flag_receive)
+            #         # print(working_folder)
+            #         with open (os.path.join(template_folder, "PO_line_phys_atl.xml"),"r") as polfl:
+            #             po_data = polfl.read()
+            #         po_data = re.sub(r"\[MMS\]", mms, po_data)
+            #         pol_no_atl, flag_po = create_po_line( po_data, key )
+            #         print( "5.2.2 Getting pid for physical ATL" )
+            #         pid_atl, flag_pid =get_pid( pol_no_atl, key)
+            #         # print( "6.2.2 Receiving item for physical ATL" )
+            #         # resp,flag_receive = receive_item( pol_no_atl, pid_atl,key )
+            #         # if flag_bib or flag_po or flag_pid or flag_receive:
+            #         #     mms, pol_atl, pid_atl, resp = checker(fn, bib_data, po_data, mms, pol_no_atl, pid_atl, flag_bib, flag_pol, flag_pid, flag_receive)
+            #         # print(working_folder)   
+            #         print( "7. Writing ")
+            #         with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+            #             f.write(fl+"|"+mms+"|"+pol_no_nl+"|"+pid_nl+"|"+pol_no_atl+"|"+pid_atl+"|"+my_dict["title"]+"|"+my_dict["message"]+"\n")
                 
-                # else:
-                    # with open(text_file_path,"a") as f:
-                    #     f.write(fl+"||||could not make a record"+"\n")
-                    if key=="prod":
-                        with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"a", encoding="utf-8") as f:
-                            f.write(my_dict["title"]+"\n")
-                    if key =="prod":
-                        with open(sounz_set,"a",encoding= "utf-8") as f:
-                            f.write(my_dict["title"] + "||"+my_dict["subtitle"]+"||"+my_dict["author"]+"||"+mms+"\n")
-            else:
-                with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
-                    f.write(fl+"| | | | | |"+my_dict["title"]+"|"+my_dict["message"]+ r"Dup found {}".format(my_dup_mms) + "\n")
+            #     # else:
+            #         # with open(text_file_path,"a") as f:
+            #         #     f.write(fl+"||||could not make a record"+"\n")
+            #         if key=="prod":
+            #             with open(os.path.join(working_folder,"log","reports","sounz_titles.txt"),"a", encoding="utf-8") as f:
+            #                 f.write(my_dict["title"]+"\n")
+            #         if key =="prod":
+            #             with open(sounz_set,"a",encoding= "utf-8") as f:
+            #                 f.write(my_dict["title"] + "||"+my_dict["subtitle"]+"||"+my_dict["author"]+"||"+mms+"\n")
+            # else:
+            #     with open(os.path.join(working_folder,"log","reports","sounz_phys_{}.txt".format(Times.underscore())),"a", encoding="utf-8") as f:
+            #         f.write(fl+"| | | | | |"+my_dict["title"]+"|"+my_dict["message"]+ r"Dup found {}".format(my_dup_mms) + "\n")
     #
     #####################################################Comment this part if you need only make sips from reports############################################3
 
